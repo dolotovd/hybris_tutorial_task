@@ -17,8 +17,8 @@
 		<extension name="hmc" />
 		<extension name="mcc" />
 		<extension name="platformhmc" />
-		<!--extension name="cuppy"/-->
-		<!--extension name="cuppytrail"/-->
+		
+      <extension name="hybristask1" />
 										
 		<!-- ext-platform-optional -->
 
