@@ -19,6 +19,7 @@
 		<extension name="platformhmc" />
 		
       <extension name="hybristask1" />
+      <extension name="hybristask2" />
 										
 		<!-- ext-platform-optional -->
 

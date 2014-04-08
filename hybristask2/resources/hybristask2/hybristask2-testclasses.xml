@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testclasses>
+  <hybristask2>
+    <testclass>de.hybris.tutorial.task2.jalo.Hybristask2Test</testclass>
+  </hybristask2>
+</testclasses>

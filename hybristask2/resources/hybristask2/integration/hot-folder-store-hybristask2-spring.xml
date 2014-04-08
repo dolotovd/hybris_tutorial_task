@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ [y] hybris Platform
+
+ Copyright (c) 2000-2013 hybris AG
+ All rights reserved.
+
+ This software is the confidential and proprietary information of hybris
+ ("Confidential Information"). You shall not disclose such Confidential
+ Information and shall use it only in accordance with the terms of the
+ license agreement you entered into with hybris.
+-->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:int="http://www.springframework.org/schema/integration"
+	xmlns:file="http://www.springframework.org/schema/integration/file"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+		http://www.springframework.org/schema/integration
+		http://www.springframework.org/schema/integration/spring-integration-2.1.xsd
+		http://www.springframework.org/schema/integration/file
+		http://www.springframework.org/schema/integration/file/spring-integration-file-2.1.xsd">
+
+	<bean id="baseDirectoryHybristask2" class="java.lang.String">
+		<constructor-arg value="#{baseDirectory}/${tenantId}/hybristask2" />
+	</bean>
+	<!-- 1) Scan for files -->
+	<file:inbound-channel-adapter id="batchFilesHybristask2" directory="#{baseDirectoryHybristask2}"
+		filename-regex="^(.*)-(\d+)\.csv" comparator="fileOrderComparator">
+		<int:poller fixed-rate="2000" />
+	</file:inbound-channel-adapter>
+	
+	<!-- 2) move the file to processing and setup header -->
+	<file:outbound-gateway request-channel="batchFilesHybristask2" reply-channel="batchFilesHybristask2Proc"
+		directory="#{baseDirectoryHybristask2}/processing" delete-source-files="true" />
+	<int:service-activator input-channel="batchFilesHybristask2Proc" output-channel="batchFilesHeaderInit"
+		ref="hybristask2HeaderSetupTask" method="execute" />
+	<bean id="hybristask2HeaderSetupTask" class="de.hybris.platform.acceleratorservices.dataimport.batch.task.HeaderSetupTask">
+		<property name="catalog" value="hybristask2ProductCatalog" />
+		<property name="net" value="false" />
+		<property name="storeBaseDirectory" ref="baseDirectoryHybristask2" />
+	</bean>
+	
+	
+	<!-- converters mappings -->
+	<bean id="batchOrganizationConverterMapping" 
+		class="de.hybris.platform.acceleratorservices.dataimport.batch.converter.mapping.impl.DefaultConverterMapping" 
+		p:mapping="organization" 
+		p:converter-ref="batchOrganizationConverter"/>
+	<bean id="batchOrganizationConverter" 
+		class="de.hybris.platform.acceleratorservices.dataimport.batch.converter.impl.DefaultImpexConverter" >
+		<property name="header">
+            <value># Impex for organizations importing
+                $catalog=$CATALOG$
+                #% impex.setLocale(Locale.ENGLISH); 
+                INSERT_UPDATE Organization;id[unique=true];name;phoneNumber
+            </value>
+        </property>
+        <property name="impexRow">
+            <value>;{0};{1};{2}</value>
+        </property>
+	</bean>
+	
+   <bean id="batchCustomerConverterMapping" 
+        class="de.hybris.platform.acceleratorservices.dataimport.batch.converter.mapping.impl.DefaultConverterMapping"
+        p:mapping="customer" p:converter-ref="batchCustomerConverter" />
+    <bean id="batchCustomerConverter" class="de.hybris.platform.acceleratorservices.dataimport.batch.converter.impl.DefaultImpexConverter">
+        <property name="header">
+            <value># Impex for customer importing
+                $catalog=$CATALOG$
+                #% impex.setLocale(Locale.ENGLISH);
+                insert_update Customer;uid[unique=true,allownull=true];attemptCount;status;name;organizations(id)
+            </value>
+        </property>
+        <property name="impexRow">
+            <value>;{+0};{1};{2}</value>
+        </property>
+    </bean>
+    
+</beans>
+ 
